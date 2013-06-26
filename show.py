@@ -9,8 +9,6 @@ f = sys.stdin
 cols, rows = unpack('hh', f.read(4))
 img = Image.new('RGBA', (cols, rows))
 
-print img
-
 for row in xrange(rows):
     length = cols * 4
     line = unpack(str(length) + 'c', f.read(length))
