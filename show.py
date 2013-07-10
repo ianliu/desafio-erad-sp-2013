@@ -19,4 +19,4 @@ for row in xrange(rows):
         img.putpixel((col, row), color)
 
 img.save("image.png")
-img.show()
+# img.show()
