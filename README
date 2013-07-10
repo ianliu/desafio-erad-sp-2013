@@ -1,0 +1,27 @@
+Compilando
+==========
+
+    make
+
+Gerando dado de teste
+=====================
+
+    make data
+
+Executando
+==========
+
+    make run
+
+Visualizando a imagem
+=====================
+
+O script `show.py` transforma a imagem dada em um arquivo chamado
+`image.png` da seguinte forma:
+
+    ./show.py < image.in
+
+Após isso, um arquivo `image.png` será criado. Para visualiza-lo basta
+usar o `eog`, por exemplo:
+
+    eog image.png
