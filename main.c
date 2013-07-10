@@ -19,8 +19,8 @@ void smooth5()
 	int w = width + 2*BORDER;
 	int i, j;
 	int r, g, b, a;
-	for (i = BORDER; i < width + BORDER; i++) {
-		for (j = BORDER; j < height + BORDER; j++) {
+	for (i = BORDER; i < height + BORDER; i++) {
+		for (j = BORDER; j < width + BORDER; j++) {
 			r = g = b = a = 0;
 
 			r += img[((i-2)*w + (j-2))*4+0], g += img[((i-2)*w + (j-2))*4+1], b += img[((i-2)*w + (j-2))*4+2], a += img[((i-2)*w + (j-2))*4+3];
@@ -74,8 +74,6 @@ void load()
 	read(file, &width, sizeof(width));
 	read(file, &height, sizeof(height));
 
-	printf("%d %d\n", width, height);
-
 	for (i = BORDER; i < height + BORDER; i++)
 		read(file, &img[(i*(width+BORDER*2) + BORDER)*4], width*4);
 }
@@ -84,8 +82,6 @@ void store()
 {
 	int i;
 	int file = creat("image.out", 0644);
-
-	printf("%d %d\n", width, height);
 
 	write(file, &width, sizeof(width));
 	write(file, &height, sizeof(height));
