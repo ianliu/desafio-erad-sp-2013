@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 #define MAX_W 7680
@@ -90,10 +91,28 @@ void store()
 		write(file, &out[(i*(width+BORDER*2) + BORDER)*4], width*4);
 }
 
+uint64_t tick()
+{
+	struct timespec tp;
+	clock_gettime(CLOCK_MONOTONIC, &tp);
+	return tp.tv_sec*1000000000 + tp.tv_nsec;
+}
+
 int main(int argc, char *argv[])
 {
+	uint64_t t0;
+
+	t0 = tick();
 	load();
+	printf("load: %ld\n", tick() - t0);
+
+	t0 = tick();
 	smooth5();
+	printf("smooth5: %ld\n", tick() - t0);
+
+	t0 = tick();
 	store();
+	printf("store: %ld\n", tick() - t0);
+
 	return 0;
 }

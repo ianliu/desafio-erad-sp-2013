@@ -3,7 +3,7 @@ PROGRAM = smooth
 all: $(PROGRAM)
 
 $(PROGRAM): main.c
-	$(CC) -Wall -O3 -o $@ $^
+	$(CC) $(CFLAGS) -Wall -O3 -o $@ $^ -lrt
 
 run: $(PROGRAM)
 	./$(PROGRAM)
