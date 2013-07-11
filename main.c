@@ -62,6 +62,20 @@ void smooth5()
 	}
 }
 
+void read_or_die(int fd, void *buf, size_t count)
+{
+	ssize_t sz = read(fd, buf, count);
+	if (sz != count)
+		exit(2);
+}
+
+void write_or_die(int fd, const void *buf, size_t count)
+{
+	ssize_t sz = write(fd, buf, count);
+	if (sz != count)
+		exit(3);
+}
+
 void load()
 {
 	int i;
@@ -72,11 +86,11 @@ void load()
 		exit(1);
 	}
 
-	read(file, &width, sizeof(width));
-	read(file, &height, sizeof(height));
+	read_or_die(file, &width, sizeof(width));
+	read_or_die(file, &height, sizeof(height));
 
 	for (i = BORDER; i < height + BORDER; i++)
-		read(file, &img[(i*(width+BORDER*2) + BORDER)*4], width*4);
+		read_or_die(file, &img[(i*(width+BORDER*2) + BORDER)*4], width*4);
 }
 
 void store()
@@ -84,11 +98,16 @@ void store()
 	int i;
 	int file = creat("image.out", 0644);
 
-	write(file, &width, sizeof(width));
-	write(file, &height, sizeof(height));
+	if (file == -1) {
+		perror("creat");
+		exit(1);
+	}
+
+	write_or_die(file, &width, sizeof(width));
+	write_or_die(file, &height, sizeof(height));
 
 	for (i = BORDER; i < height + BORDER; i++)
-		write(file, &out[(i*(width+BORDER*2) + BORDER)*4], width*4);
+		write_or_die(file, &out[(i*(width+BORDER*2) + BORDER)*4], width*4);
 }
 
 uint64_t tick()
