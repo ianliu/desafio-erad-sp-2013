@@ -7,13 +7,21 @@
 #include <time.h>
 #include <unistd.h>
 
+/* Largura máxima da imagem, dada no problema */
 #define MAX_W 7680
+
+/* Altura máxima da imagem, dada no problema */
 #define MAX_H 4320
+
+/* Tamanho da borda de zeros na imagem para um smooth de janela 5x5 */
 #define BORDER 2
 
+/* Tamanho máximo de uma imagem */
+#define MAX_SIZE ((MAX_W+2*BORDER)*(MAX_H+2*BORDER)*4)
+
 static uint16_t width, height;
-static uint8_t img[500000000] = {0,}; /* Aloca 0.5 GB */
-static uint8_t out[500000000] = {0,}; /* Aloca 0.5 GB */
+static uint8_t img[MAX_SIZE] = {0,};
+static uint8_t out[MAX_SIZE] = {0,};
 
 void smooth5()
 {
