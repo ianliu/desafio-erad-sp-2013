@@ -19,6 +19,20 @@
 /* Tamanho máximo de uma imagem */
 #define MAX_SIZE ((MAX_W+2*BORDER)*(MAX_H+2*BORDER)*4)
 
+/* time_it(func):
+ * Esta macro executa a função `func' e imprime o tempo tomado por ela
+ * caso NDEBUG não esteja definido.
+ */
+#ifdef NDEBUG
+# define time_it(func) func()
+#else
+# define time_it(func) do { \
+	uint64_t t0 = tick(); \
+	func(); \
+	printf(#func ": %ld\n", tick()-t0); \
+} while(0)
+#endif
+
 static uint16_t width, height;
 static uint8_t img[MAX_SIZE] = {0,};
 static uint8_t out[MAX_SIZE] = {0,};
@@ -127,19 +141,8 @@ uint64_t tick()
 
 int main(int argc, char *argv[])
 {
-	uint64_t t0;
-
-	t0 = tick();
-	load();
-	printf("load: %ld\n", tick() - t0);
-
-	t0 = tick();
-	smooth5();
-	printf("smooth5: %ld\n", tick() - t0);
-
-	t0 = tick();
-	store();
-	printf("store: %ld\n", tick() - t0);
-
+	time_it(load);
+	time_it(smooth5);
+	time_it(store);
 	return 0;
 }
