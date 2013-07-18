@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <inttypes.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -33,17 +34,30 @@
 } while(0)
 #endif
 
+#define NUM_THREADS 4
+
 static uint16_t width, height;
 static uint8_t img[MAX_SIZE] = {0,};
 static uint8_t out[MAX_SIZE] = {0,};
 
-void smooth5()
+struct slice {
+	pthread_t thread;
+	int x0, x1;
+	int y0, y1;
+} slices[NUM_THREADS];
+
+void *smooth5_slice(void *data)
 {
+	uintptr_t tid = (uintptr_t)data;
 	int w = width + 2*BORDER;
-	int i, j;
+	int i, j, x0, x1, y0, y1;
 	int r, g, b, a;
-	for (i = BORDER; i < height + BORDER; i++) {
-		for (j = BORDER; j < width + BORDER; j++) {
+	x0 = BORDER + slices[tid].x0;
+	x1 = BORDER + slices[tid].x1;
+	y0 = BORDER + slices[tid].y0;
+	y1 = BORDER + slices[tid].y1;
+	for (i = y0; i < y1; i++) {
+		for (j = x0; j < x1; j++) {
 			r = g = b = a = 0;
 
 			r += img[((i-2)*w + (j-2))*4+0], g += img[((i-2)*w + (j-2))*4+1], b += img[((i-2)*w + (j-2))*4+2], a += img[((i-2)*w + (j-2))*4+3];
@@ -82,6 +96,28 @@ void smooth5()
 			out[(i*w + j)*4 + 3] = a / 25;
 		}
 	}
+	return NULL;
+}
+
+void smooth5()
+{
+	uintptr_t k;
+	int q = height / NUM_THREADS;
+	int r = height % NUM_THREADS;
+	int cursor = 0;
+
+	for (k = 0; k < NUM_THREADS; k++) {
+		slices[k].x0 = 0;
+		slices[k].x1 = width;
+		slices[k].y0 = cursor;
+		slices[k].y1 = cursor + q + (r-- > 0? 1:0);
+		cursor = slices[k].y1;
+		pthread_create(&slices[k].thread, NULL, smooth5_slice, (void*)k);
+	}
+
+	for (k = 0; k < NUM_THREADS; k++)
+		pthread_join(slices[k].thread, NULL);
+	return;
 }
 
 void read_or_die(int fd, void *buf, size_t count)

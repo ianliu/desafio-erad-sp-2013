@@ -2,7 +2,7 @@ PROGRAM = smooth
 
 CFLAGS ?= -Wall -O3
 CPPFLAGS ?=
-LIBS ?= -lrt
+LIBS ?= -lrt -lpthread
 
 all: $(PROGRAM)
 
