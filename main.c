@@ -33,17 +33,28 @@
 } while(0)
 #endif
 
+#define MIN(a, b) ((a)<(b)?(a):(b))
+
 static uint16_t width, height;
 static uint8_t img[MAX_SIZE] = {0,};
 static uint8_t out[MAX_SIZE] = {0,};
 
-void smooth5()
+struct slice {
+	int x0, x1;
+	int y0, y1;
+};
+
+void smooth5_slice(struct slice *slice)
 {
 	int w = width + 2*BORDER;
-	int i, j;
+	int i, j, x0, x1, y0, y1;
 	int r, g, b, a;
-	for (i = BORDER; i < height + BORDER; i++) {
-		for (j = BORDER; j < width + BORDER; j++) {
+	x0 = BORDER + slice->x0;
+	x1 = BORDER + slice->x1;
+	y0 = BORDER + slice->y0;
+	y1 = BORDER + slice->y1;
+	for (i = y0; i < y1; i++) {
+		for (j = x0; j < x1; j++) {
 			r = g = b = a = 0;
 
 			r += img[((i-2)*w + (j-2))*4+0], g += img[((i-2)*w + (j-2))*4+1], b += img[((i-2)*w + (j-2))*4+2], a += img[((i-2)*w + (j-2))*4+3];
@@ -80,6 +91,30 @@ void smooth5()
 			out[(i*w + j)*4 + 1] = g / 25;
 			out[(i*w + j)*4 + 2] = b / 25;
 			out[(i*w + j)*4 + 3] = a / 25;
+		}
+	}
+}
+
+void smooth5()
+{
+	int i, j;
+	int size = 64;
+	int qw = width / size;
+	int rw = width % size;
+	int qh = height / size;
+	int rh = height % size;
+	int sw = qw + (rw == 0? 0:1);
+	int sh = qh + (rh == 0? 0:1);
+
+	struct slice slice;
+
+	for (i = 0; i < sh; i++) {
+		for (j = 0; j < sw; j++) {
+			slice.x0 = j*size;
+			slice.x1 = MIN((j+1)*size, width);
+			slice.y0 = i*size;
+			slice.y1 = MIN((i+1)*size, height);
+			smooth5_slice(&slice);
 		}
 	}
 }
