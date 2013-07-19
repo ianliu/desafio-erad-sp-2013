@@ -3,11 +3,12 @@ PROGRAM = smooth
 CFLAGS ?= -Wall -O3
 CPPFLAGS ?=
 LIBS ?= -lrt
+LDFLAGS ?= -static
 
 all: $(PROGRAM)
 
 $(PROGRAM): main.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 run: $(PROGRAM) image.in
 	./$(PROGRAM)
