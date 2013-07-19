@@ -1,3 +1,6 @@
 smooth
 *.in
 *.out
+build.cmd
+compiler.ver
+image.png
