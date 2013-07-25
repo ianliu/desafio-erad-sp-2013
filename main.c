@@ -21,6 +21,12 @@
 /* Tamanho máximo de uma imagem */
 #define MAX_SIZE ((MAX_W+2*BORDER)*(MAX_H+2*BORDER)*4)
 
+/* Tamanho da fatia */
+#define SLICE 64
+
+/* Número máximo de fatias de tamanho SLICE */
+#define MAX_SLICES ((MAX_W/SLICE+1) * (MAX_H/SLICE+1))
+
 /* time_it(func):
  * Esta macro executa a função `func' e imprime o tempo tomado por ela
  * caso NDEBUG não esteja definido.
@@ -35,27 +41,30 @@
 } while(0)
 #endif
 
-#define NUM_THREADS 2
+#define MIN(a, b) ((a)<(b)?(a):(b))
+
+#ifndef NUM_THREADS
+# define NUM_THREADS 8
+#endif
 
 static uint16_t width, height;
 static uint8_t img[MAX_SIZE] = {0,};
 static uint8_t out[MAX_SIZE] = {0,};
+static int NUM_SLICES;
 
 struct slice {
-	pthread_t thread;
 	int x0, x1;
 	int y0, y1;
-} slices[NUM_THREADS];
+} slices[MAX_SLICES];
 
-void *smooth5_slice(void *data)
+void smooth5_slice(struct slice *slice)
 {
-	uintptr_t tid = (uintptr_t)data;
 	int w = width + 2*BORDER;
 	int i, j, k, l, x0, x1, y0, y1;
-	x0 = BORDER + slices[tid].x0;
-	x1 = BORDER + slices[tid].x1;
-	y0 = BORDER + slices[tid].y0;
-	y1 = BORDER + slices[tid].y1;
+	x0 = BORDER + slice->x0;
+	x1 = BORDER + slice->x1;
+	y0 = BORDER + slice->y0;
+	y1 = BORDER + slice->y1;
 	for (i = y0; i < y1; i++) {
 		for (j = x0; j < x1; j += 16) {
 			int idx;
@@ -117,36 +126,60 @@ void *smooth5_slice(void *data)
 				s += pixels[l];
 
 			for (l = j; l < j+16; l++) {
-				out[(i*w + l)*4 + 0] = ((s & 0x000000000000ffff)) / 25;
-				out[(i*w + l)*4 + 1] = ((s & 0x00000000ffff0000) >> 16) / 25;
-				out[(i*w + l)*4 + 2] = ((s & 0x0000ffff00000000) >> 32) / 25;
-				out[(i*w + l)*4 + 3] = ((s & 0xffff000000000000) >> 48) / 25;
+				out[((i-BORDER)*width + l-BORDER)*4 + 0] = ((s & 0x000000000000ffff)) / 25;
+				out[((i-BORDER)*width + l-BORDER)*4 + 1] = ((s & 0x00000000ffff0000) >> 16) / 25;
+				out[((i-BORDER)*width + l-BORDER)*4 + 2] = ((s & 0x0000ffff00000000) >> 32) / 25;
+				out[((i-BORDER)*width + l-BORDER)*4 + 3] = ((s & 0xffff000000000000) >> 48) / 25;
 				s -= pixels[l-j];
 				s += pixels[l-j+5];
 			}
 		}
 	}
+}
+
+void create_slices()
+{
+	int i, j, k = 0;
+	int size = 64;
+	int qw = width / size;
+	int rw = width % size;
+	int qh = height / size;
+	int rh = height % size;
+	int sw = qw + (rw == 0? 0:1);
+	int sh = qh + (rh == 0? 0:1);
+
+	for (i = 0; i < sh; i++) {
+		for (j = 0; j < sw; j++) {
+			slices[k].x0 = j*size;
+			slices[k].x1 = MIN((j+1)*size, width);
+			slices[k].y0 = i*size;
+			slices[k].y1 = MIN((i+1)*size, height);
+			k++;
+		}
+	}
+	NUM_SLICES = k;
+}
+
+void *smooth_slices(void *data)
+{
+	int i;
+	uintptr_t tid = (uintptr_t) data;
+	for (i = tid; i < NUM_SLICES; i += NUM_THREADS)
+		smooth5_slice(&slices[i]);
 	return NULL;
 }
 
 void smooth5()
 {
 	uintptr_t k;
-	int q = height / NUM_THREADS;
-	int r = height % NUM_THREADS;
-	int cursor = 0;
-
-	for (k = 0; k < NUM_THREADS; k++) {
-		slices[k].x0 = 0;
-		slices[k].x1 = width;
-		slices[k].y0 = cursor;
-		slices[k].y1 = cursor + q + (r-- > 0? 1:0);
-		cursor = slices[k].y1;
-		pthread_create(&slices[k].thread, NULL, smooth5_slice, (void*)k);
-	}
+	create_slices();
+	pthread_t threads[NUM_THREADS];
 
 	for (k = 0; k < NUM_THREADS; k++)
-		pthread_join(slices[k].thread, NULL);
+		pthread_create(&threads[k], NULL, smooth_slices, (void*)k);
+
+	for (k = 0; k < NUM_THREADS; k++)
+		pthread_join(threads[k], NULL);
 	return;
 }
 
@@ -193,9 +226,9 @@ void store()
 
 	write_or_die(file, &width, sizeof(width));
 	write_or_die(file, &height, sizeof(height));
-
-	for (i = BORDER; i < height + BORDER; i++)
-		write_or_die(file, &out[(i*(width+BORDER*2) + BORDER)*4], width*4);
+	ssize_t written = 0;
+	while (written < width*height*4)
+		written += write(file, &out[0], width*height*4);
 }
 
 uint64_t tick()
