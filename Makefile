@@ -1,8 +1,9 @@
 PROGRAM = smooth
 
+CC = icc
 CFLAGS ?= -Wall -O3
 CPPFLAGS ?= -DNDEBUG
-LIBS ?= -lrt -lpthread
+LIBS ?= -lpthread
 LDFLAGS ?= -static
 
 all: $(PROGRAM)
@@ -28,3 +29,9 @@ perf: $(PROGRAM)
 	@echo "version: `git rev-parse HEAD 2>/dev/null`"
 	@echo "-------------------------------------------------"
 	perf stat -r5 -e instructions,cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses ./$(PROGRAM)
+
+dist:
+	rm -rf serial-killers serial-killers.tar.gz \
+	  && mkdir serial-killers \
+	  && cp Makefile main.c AUTHORS COPYING serial-killers \
+	  && tar czf serial-killers.tar.gz serial-killers
