@@ -35,7 +35,7 @@
 } while(0)
 #endif
 
-#define NUM_THREADS 4
+#define NUM_THREADS 1
 
 static uint16_t width, height;
 static uint8_t img[MAX_SIZE] = {0,};
@@ -51,9 +51,7 @@ void *smooth5_slice(void *data)
 {
 	uintptr_t tid = (uintptr_t)data;
 	int w = width + 2*BORDER;
-	int i, j, k, l, x0, x1, y0, y1;
-	int r, g, b, a;
-	uint64_t pixel;
+	int i, j, k, x0, x1, y0, y1;
 	x0 = BORDER + slices[tid].x0;
 	x1 = BORDER + slices[tid].x1;
 	y0 = BORDER + slices[tid].y0;
@@ -62,7 +60,13 @@ void *smooth5_slice(void *data)
 		for (j = x0; j < x1; j++) {
 			int idx;
 			__m128i zero = _mm_setzero_si128();
-			__m128i line, sum = _mm_setzero_si128();
+			__m128i line;
+			__m128i sum = _mm_setzero_si128();
+			/* __m128i s1 = _mm_setzero_si128(); */
+			/* __m128i s2 = _mm_setzero_si128(); */
+			/* __m128i s3 = _mm_setzero_si128(); */
+			/* __m128i s4 = _mm_setzero_si128(); */
+			/* __m128i s5 = _mm_setzero_si128(); */
 
 			for (k = i-2; k <= i+2; k++) {
 				idx = (k*w + j-2)*4;
@@ -75,17 +79,16 @@ void *smooth5_slice(void *data)
 			_mm_storeu_si128((__m128i *)&pixels[0], sum);
 			uint64_t s = pixels[0] + pixels[1];
 
+			/* The masks are inverted here because Intel uses little endian */
 			for (k = i-2; k <= i+2; k++) {
 				int idx = (k*w + j+2)*4;
-				s += ((uint64_t)img[idx+0] << 48) | ((uint64_t)img[idx+1] << 32) | ((uint64_t)img[idx+2] << 16) | (uint64_t)img[idx+3];
+				s += ((uint64_t)img[idx+0]) | ((uint64_t)img[idx+1] << 16) | ((uint64_t)img[idx+2] << 32) | ((uint64_t)img[idx+3] << 48);
 			}
 
-			// s é a soma dos pixels da janela
-
-			out[(i*w + j)*4 + 0] = ((s & 0xffff000000000000) >> 48) / 25;
-			out[(i*w + j)*4 + 1] = ((s & 0x0000ffff00000000) >> 32) / 25;
-			out[(i*w + j)*4 + 2] = ((s & 0x00000000ffff0000) >> 16) / 25;
-			out[(i*w + j)*4 + 3] = ((s & 0x000000000000ffff)) / 25;
+			out[(i*w + j)*4 + 0] = ((s & 0x000000000000ffff)) / 25;
+			out[(i*w + j)*4 + 1] = ((s & 0x00000000ffff0000) >> 16) / 25;
+			out[(i*w + j)*4 + 2] = ((s & 0x0000ffff00000000) >> 32) / 25;
+			out[(i*w + j)*4 + 3] = ((s & 0xffff000000000000) >> 48) / 25;
 		}
 	}
 	return NULL;
