@@ -66,8 +66,10 @@
 # define NUM_THREADS 8
 #endif
 
+#define ALIGN 8
+
 static uint16_t width, height;
-static uint8_t img[MAX_SIZE] = {0,};
+static uint8_t img[MAX_SIZE + ALIGN] __attribute__((aligned(0x10))) = {0,};
 static uint8_t out[MAX_SIZE] = {0,};
 static int NUM_SLICES;
 
@@ -102,27 +104,27 @@ void smooth5_slice(struct slice *slice)
 
 			for (k = i-2; k <= i+2; k++) {
 				idx = (k*w + j-2)*4;
-				line = _mm_loadu_si128((const __m128i *)&img[idx]);
+				line = _mm_load_si128((const __m128i *)&img[idx + ALIGN]);
 				s0 = _mm_add_epi16(s0, _mm_unpacklo_epi8(line, zero));
 				s1 = _mm_add_epi16(s1, _mm_unpackhi_epi8(line, zero));
 
 				idx += 16;
-				line = _mm_loadu_si128((const __m128i *)&img[idx]);
+				line = _mm_load_si128((const __m128i *)&img[idx + ALIGN]);
 				s2 = _mm_add_epi16(s2, _mm_unpacklo_epi8(line, zero));
 				s3 = _mm_add_epi16(s3, _mm_unpackhi_epi8(line, zero));
 
 				idx += 16;
-				line = _mm_loadu_si128((const __m128i *)&img[idx]);
+				line = _mm_load_si128((const __m128i *)&img[idx + ALIGN]);
 				s4 = _mm_add_epi16(s4, _mm_unpacklo_epi8(line, zero));
 				s5 = _mm_add_epi16(s5, _mm_unpackhi_epi8(line, zero));
 
 				idx += 16;
-				line = _mm_loadu_si128((const __m128i *)&img[idx]);
+				line = _mm_load_si128((const __m128i *)&img[idx + ALIGN]);
 				s6 = _mm_add_epi16(s6, _mm_unpacklo_epi8(line, zero));
 				s7 = _mm_add_epi16(s7, _mm_unpackhi_epi8(line, zero));
 
 				idx += 16;
-				line = _mm_loadu_si128((const __m128i *)&img[idx]);
+				line = _mm_load_si128((const __m128i *)&img[idx + ALIGN]);
 				s8 = _mm_add_epi16(s8, _mm_unpacklo_epi8(line, zero));
 				s9 = _mm_add_epi16(s9, _mm_unpackhi_epi8(line, zero));
 			}
@@ -230,7 +232,7 @@ void load()
 	read_or_die(file, &height, sizeof(height));
 
 	for (i = BORDER; i < height + BORDER; i++)
-		read_or_die(file, &img[(i*(width+BORDER*2) + BORDER)*4], width*4);
+		read_or_die(file, &img[(i*(width+BORDER*2) + BORDER)*4 + ALIGN], width*4);
 }
 
 void store()
