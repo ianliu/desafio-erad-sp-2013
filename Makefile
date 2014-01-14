@@ -1,9 +1,9 @@
 PROGRAM = smooth
 
-CC = icc
+CC ?= clang
 CFLAGS ?= -Wall -O3
-CPPFLAGS ?= -DNDEBUG
-LIBS ?= -lrt
+CPPFLAGS ?= -DDEBUG
+LIBS ?= -lpthread
 LDFLAGS ?= -static
 
 all: $(PROGRAM)
@@ -19,7 +19,7 @@ run: $(PROGRAM) image.in
 clean:
 	rm -f $(PROGRAM) image.out build.cmd compiler.ver
 
-data: checker.py
+image.in: checker.py
 	./checker.py -w 7680 -h 4320 > image.in
 
 perf: $(PROGRAM)
