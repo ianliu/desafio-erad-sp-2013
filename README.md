@@ -15,7 +15,7 @@ Carlos, Brazil. The purpose of the program is to apply an average filter in a
 
     $ cd build
     $ make run
-    $ display image.ppm \# Use your favorite image viewer here!
+    $ display image.ppm # Use your favorite image viewer here!
 
 ## The image format
 
