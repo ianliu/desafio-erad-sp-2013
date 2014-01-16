@@ -1,27 +1,40 @@
-Compilando
-==========
+# Fast Average Filter
 
-    make
+This project is part of a high performance computing contest held in São
+Carlos, Brazil. The purpose of the program is to apply an average filter in a
+4K resolution image as fast as possible.
 
-Gerando dado de teste
-=====================
+## Compiling
 
-    make data
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
 
-Executando
-==========
+## Testing the program
 
-    make run
+    $ cd build
+    $ make run
+    $ display image.ppm \# Use your favorite image viewer here!
 
-Visualizando a imagem
-=====================
+## The image format
 
-O script `show.py` transforma a imagem dada em um arquivo chamado
-`image.png` da seguinte forma:
+The image is written in little endian binary form. The first 2 bytes
+represents the width of the image and the next 2 bytes represents the height.
+After that pixels are written with 4 bytes, each one representing the red,
+green, blue and alpha channel respectively. The pixels are written as rows
+first, from top-left to right-bottom.
 
-    ./show.py < image.in
+## Borders
 
-Após isso, um arquivo `image.png` será criado. Para visualiza-lo basta
-usar o `eog`, por exemplo:
+We assume a border of zeroes.
 
-    eog image.png
+## Window size
+
+The window size is hard coded as a 5x5 matrix.
+
+## Visualizing images
+
+This software comes with a program called _convert_ that converts the image in
+the raw format to a PPM image. The alpha channel is lost in this transition,
+but suffices for opaque images.

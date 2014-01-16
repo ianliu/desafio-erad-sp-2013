@@ -5,3 +5,4 @@ build.cmd
 compiler.ver
 image.png
 build
+*.swp
