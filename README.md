@@ -32,9 +32,3 @@ We assume a border of zeroes.
 ## Window size
 
 The window size is hard coded as a 5x5 matrix.
-
-## Visualizing images
-
-This software comes with a program called _convert_ that converts the image in
-the raw format to a PPM image. The alpha channel is lost in this transition,
-but suffices for opaque images.
